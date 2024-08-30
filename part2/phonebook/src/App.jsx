@@ -4,12 +4,15 @@ import phonebookService from './services/phonebook'
 import Filter from './components/Filter'
 import Form from './components/Form'
 import Persons from './components/Persons'
+import Notification from './components/Notification'
 
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filteredPersons, setFilteredPersons] = useState(persons)
+  const [notificationMessage, setNotificationMessage] = useState(null)
+  const [notificationSuccessful, setNotificationSuccessful] = useState(true)
 
   useEffect(()=> {
     phonebookService
@@ -37,6 +40,10 @@ const App = () => {
   const handleClick = (event) => {
     event.preventDefault()
     const findPerson = persons.find(person => person.name === newName)
+    let message = {
+      content: "",
+      successful: true
+    }
 
     if (!findPerson) {
       const newPerson = {
@@ -54,25 +61,44 @@ const App = () => {
       setFilteredPersons(newList)
       setNewName('')
       setNewNumber('')
+      message.content = `Added ${newName}`
+      message.successful = true
     } else if (findPerson.number !== newNumber) {
       if (window.confirm(`${findPerson.name} is already added to phonebook, replace the old number with a new one?`)) {
         const newList = persons.map(person => {
           if (person.id === findPerson.id) {
             const updatedPerson = { ...person, number: newNumber}
-            phonebookService.updateNumber(updatedPerson.id, updatedPerson).then(response => console.log(response)) 
+            
+            phonebookService
+              .updateNumber(updatedPerson.id, updatedPerson)
+              .then(response => console.log(response))
+              .catch(error => {
+                setNotificationMessage(`Information of ${updatedPerson.name} has already been removed from server`)
+                setNotificationSuccessful(false)
+              }) 
+            
+            message.content = `Successfully changed number for ${updatedPerson.name}`
+            message.successful = true
+
             return updatedPerson
           } else {
             return person
           }
         })
         setPersons(newList)
-        setFilteredPersons(newList)
-
-               
+        setFilteredPersons(newList)       
       }
     } else {
-      alert(`${newName} is already added to phonebook`)
+      message = {
+        content: `${newName} is already added to phonebook`,
+        successful: false
+      }
     }
+    setNotificationMessage(message.content)
+    setNotificationSuccessful(message.successful)
+    setTimeout(() => {
+      setNotificationMessage(null)
+    }, 5000) 
   }
 
   const deleteNumber = (id) => {
@@ -81,16 +107,25 @@ const App = () => {
       phonebookService
       .deleteNumber(id)
       .then(response => console.log(response))
+      .catch(error => {
+        setNotificationMessage(`Information of ${deletedPerson.name} has already been removed from server`)
+        setNotificationSuccessful(false)
+      })
 
-    const updatedList = persons.filter(person => person.id !== id)
-    setPersons(updatedList)
-    setFilteredPersons(updatedList)
+      const updatedList = persons.filter(person => person.id !== id)
+      setPersons(updatedList)
+      setFilteredPersons(updatedList)
+
+      setNotificationMessage(`Successfully deleted ${deletedPerson.name}`)
+      setNotificationSuccessful(true)
     }
+    
   }
 
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={notificationMessage} successful={notificationSuccessful} />
       <Filter filterFunction={filterNumbers}/>
       <h2>add a new number</h2>
       <Form newName={newName} newNumber={newNumber} handleChange={handleChange} handleNumberChange={handleNumberChange} handleClick={handleClick}/>
