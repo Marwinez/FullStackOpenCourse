@@ -6,7 +6,7 @@ import Footer from './components/Footer'
 
 
 const App = () => {
-  const [notes, setNotes] = useState([])
+  const [notes, setNotes] = useState(null)
   const [newNote, setNewNote] = useState('')
   const [showAll, setShowAll] = useState(true)
   const [errorMessage, setErrorMessage] = useState(null)
@@ -19,6 +19,10 @@ const App = () => {
       })
   }, [])
   //console.log('render', notes.length, 'notes')
+
+  if (!notes) {
+    return null
+  }
 
   const toggleImportanceOf = (id) => {
     const note = notes.find(n => n.id === id)
