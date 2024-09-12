@@ -34,5 +34,6 @@ export default [
         { allowConstantExport: true },
       ],
     },
+    'prop/types': 0
   },
 ]
