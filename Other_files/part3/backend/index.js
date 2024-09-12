@@ -5,7 +5,6 @@ const cors = require('cors')
 
 app.use(cors())
 app.use(express.json())
-app.use(requestLogger)
 app.use(express.static('dist'))
 
 const requestLogger = (request, response, next) => {
@@ -15,7 +14,7 @@ const requestLogger = (request, response, next) => {
   console.log('---')
   next()
 }
-
+app.use(requestLogger)
 
 
 const unknownEndpoint = (request, response) => {
