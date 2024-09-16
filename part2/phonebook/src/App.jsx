@@ -6,6 +6,8 @@ import Form from './components/Form'
 import Persons from './components/Persons'
 import Notification from './components/Notification'
 
+
+
 const App = () => {
   const [persons, setPersons] = useState([])
   const [newName, setNewName] = useState('')
@@ -14,73 +16,91 @@ const App = () => {
   const [notificationMessage, setNotificationMessage] = useState(null)
   const [notificationSuccessful, setNotificationSuccessful] = useState(true)
 
+  // get all data from server once
   useEffect(()=> {
     phonebookService
       .getAll()
       .then(response => {
         setPersons(response.data)
         setFilteredPersons(response.data)
-        console.log(response)
       })
   }, [])
 
+  // Display alert box about an action
+  const alertBox = (content, success) => {
+    setNotificationMessage(content)
+    setNotificationSuccessful(success)
+    setTimeout(() => {
+      setNotificationMessage(null)
+    }, 5000) 
+  }
+
+  // Handle NAME change in form input
   const handleChange = (event) => {
     setNewName(event.target.value)
   }
 
+  // Handle NUMBER change in form input
   const handleNumberChange = (event) => {
     setNewNumber(event.target.value)
   }
 
+  // Filter and display only searched names
   const filterNumbers = (event) => {
     let filteredList = persons.filter(person => person.name.toLowerCase().includes(event.target.value.toLowerCase()))
     setFilteredPersons(filteredList)
   }
 
+  // Handle button for adding new people
   const handleClick = (event) => {
     event.preventDefault()
-    const findPerson = persons.find(person => person.name === newName)
-    let message = {
-      content: "",
-      successful: true
-    }
 
+    //check if person exists
+    const findPerson = persons.find(person => person.name === newName)
     if (!findPerson) {
       const newPerson = {
         name: newName,
-        number: newNumber,
-        id: String(persons.length + 1)
+        number: newNumber
       }
       
+      // add new person
       phonebookService
         .addNew(newPerson)
-        .then(response => console.log(response))
+        .then(response => {
+          // console.log(response)
+          newPerson.id = response.data.id
+          const newList = persons.concat(newPerson)
+          setPersons(newList)
+          setFilteredPersons(newList)
+          setNewName('')
+          setNewNumber('')
+          alertBox(`Added ${newName}`, true)
+        })
+        .catch(error => {
+          // console.log(error.response.data.error)
+          alertBox(error.response.data.error, false)
+        })   
 
-      const newList = persons.concat(newPerson)
-      setPersons(newList)
-      setFilteredPersons(newList)
-      setNewName('')
-      setNewNumber('')
-      message.content = `Added ${newName}`
-      message.successful = true
+    // if person exists check if number differs
     } else if (findPerson.number !== newNumber) {
       if (window.confirm(`${findPerson.name} is already added to phonebook, replace the old number with a new one?`)) {
         const newList = persons.map(person => {
           if (person.id === findPerson.id) {
             const updatedPerson = { ...person, number: newNumber}
             
+            // update number for existing person
             phonebookService
               .updateNumber(updatedPerson.id, updatedPerson)
-              .then(response => console.log(response))
+              .then(response => {
+                console.log(response)
+                alertBox(`Successfully changed number for ${updatedPerson.name}`, true)
+                return updatedPerson
+              })
               .catch(error => {
-                setNotificationMessage(`Information of ${updatedPerson.name} has already been removed from server`)
-                setNotificationSuccessful(false)
+                alertBox(`Information of ${updatedPerson.name} has already been removed from server`, false)
               }) 
             
-            message.content = `Successfully changed number for ${updatedPerson.name}`
-            message.successful = true
-
-            return updatedPerson
+            
           } else {
             return person
           }
@@ -89,18 +109,13 @@ const App = () => {
         setFilteredPersons(newList)       
       }
     } else {
-      message = {
-        content: `${newName} is already added to phonebook`,
-        successful: false
-      }
+      alertBox(`${newName} is already added to phonebook`, false)
     }
-    setNotificationMessage(message.content)
-    setNotificationSuccessful(message.successful)
-    setTimeout(() => {
-      setNotificationMessage(null)
-    }, 5000) 
+    
   }
 
+
+  // function for deleting a person
   const deleteNumber = (id) => {
     const deletedPerson = persons.find(person => person.id === id)
     if (window.confirm(`Delete ${deletedPerson.name}?`)) {
@@ -108,8 +123,10 @@ const App = () => {
       .deleteNumber(id)
       .then(response => console.log(response))
       .catch(error => {
-        setNotificationMessage(`Information of ${deletedPerson.name} has already been removed from server`)
-        setNotificationSuccessful(false)
+        alertBox(`Information of ${deletedPerson.name} has already been removed from server`, false)
+        // setNotificationMessage(`Information of ${deletedPerson.name} has already been removed from server`)
+        // setNotificationSuccessful(false)
+        console.log(error)
       })
 
       const updatedList = persons.filter(person => person.id !== id)
