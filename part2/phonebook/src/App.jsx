@@ -67,7 +67,6 @@ const App = () => {
       phonebookService
         .addNew(newPerson)
         .then(response => {
-          // console.log(response)
           newPerson.id = response.data.id
           const newList = persons.concat(newPerson)
           setPersons(newList)
@@ -77,36 +76,26 @@ const App = () => {
           alertBox(`Added ${newName}`, true)
         })
         .catch(error => {
-          // console.log(error.response.data.error)
           alertBox(error.response.data.error, false)
         })   
 
     // if person exists check if number differs
     } else if (findPerson.number !== newNumber) {
       if (window.confirm(`${findPerson.name} is already added to phonebook, replace the old number with a new one?`)) {
-        const newList = persons.map(person => {
-          if (person.id === findPerson.id) {
-            const updatedPerson = { ...person, number: newNumber}
-            
-            // update number for existing person
-            phonebookService
-              .updateNumber(updatedPerson.id, updatedPerson)
-              .then(response => {
-                console.log(response)
-                alertBox(`Successfully changed number for ${updatedPerson.name}`, true)
-                return updatedPerson
-              })
-              .catch(error => {
-                alertBox(`Information of ${updatedPerson.name} has already been removed from server`, false)
-              }) 
-            
-            
-          } else {
-            return person
-          }
-        })
-        setPersons(newList)
-        setFilteredPersons(newList)       
+        let newList = persons
+
+        // find and update number for existing person
+        let updatedPerson = newList.find(person => person.id === findPerson.id)
+        updatedPerson.number = newNumber
+        phonebookService
+          .updateNumber(updatedPerson.id, updatedPerson)
+          .then(response => {
+            alertBox(`Successfully changed number for ${updatedPerson.name}`, true)
+          })
+          .catch(error => {
+            alertBox(`Information of ${updatedPerson.name} has already been removed from server`, false)
+          }) 
+        setPersons(newList)      
       }
     } else {
       alertBox(`${newName} is already added to phonebook`, false)
@@ -124,9 +113,6 @@ const App = () => {
       .then(response => console.log(response))
       .catch(error => {
         alertBox(`Information of ${deletedPerson.name} has already been removed from server`, false)
-        // setNotificationMessage(`Information of ${deletedPerson.name} has already been removed from server`)
-        // setNotificationSuccessful(false)
-        console.log(error)
       })
 
       const updatedList = persons.filter(person => person.id !== id)
