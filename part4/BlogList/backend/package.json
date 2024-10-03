@@ -4,8 +4,9 @@
   "description": "backend for a bloglist app",
   "main": "index.js",
   "scripts": {
-    "test": "node --test",
+    "start": "node index.js",
     "dev": "nodemon index.js",
+    "test": "node --test",
     "lint": "eslint ."
   },
   "author": "Martin Szum",
