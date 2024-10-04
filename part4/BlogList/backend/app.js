@@ -8,7 +8,6 @@ const middleware = require('./utils/middleware')
 const logger = require('./utils/logger')
 
 const mongoUrl = config.MONGODB_URI
-console.log(mongoUrl)
 mongoose.connect(mongoUrl)
   .then(() => {
     logger.info('connected to MongoDB')
